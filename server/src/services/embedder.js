@@ -2,6 +2,10 @@ const OpenAI = require("openai");
 const env = require("../config/env");
 const logger = require("../utils/logger");
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 let _client = null;
 function client() {
   if (!_client) {
@@ -41,10 +45,13 @@ async function embedTexts(texts) {
     for (let j = 0; j < resp.data.length; j++) {
       results[i + j] = resp.data[j].embedding;
     }
-    if (resp.usage && resp.usage.total_tokens) {
-      usedTokens += resp.usage.total_tokens;
-    }
-  }
+       if (resp.usage && resp.usage.total_tokens) {
+         usedTokens += resp.usage.total_tokens;
+       }
+       if (i + batchSize < texts.length) {
+         await sleep(3500);
+       }
+     }
 
   return { vectors: results, usedTokens };
 }
