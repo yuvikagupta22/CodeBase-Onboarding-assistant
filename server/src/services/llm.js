@@ -10,6 +10,7 @@ function client() {
     _client = new OpenAI({
       apiKey: env.openai.apiKey,
       baseURL: env.openai.baseURL,
+      defaultHeaders: env.openai.defaultHeaders,
     });
   }
   return _client;

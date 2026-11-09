@@ -16,6 +16,16 @@ const clientUrls = (process.env.CLIENT_URL || "http://localhost:5173")
   .map((s) => s.trim())
   .filter(Boolean);
 
+// Google's Gemini endpoint also accepts the key in its own header. Sending
+// it there too lets newer Google key formats (e.g. "AQ.") work, which may
+// not be accepted as a Bearer token.
+function providerHeaders(baseURL, apiKey) {
+  if (baseURL && baseURL.includes("googleapis.com") && apiKey) {
+    return { "x-goog-api-key": apiKey };
+  }
+  return undefined;
+}
+
 const env = {
   nodeEnv: process.env.NODE_ENV || "development",
   port: asInt(process.env.PORT, 5000),
@@ -23,11 +33,15 @@ const env = {
   clientUrls,
 
   openai: {
-    apiKey: process.env.OPENAI_API_KEY || "",
+    apiKey: (process.env.OPENAI_API_KEY || "").trim(),
     // Override to point the OpenAI SDK at any OpenAI-compatible server
     // (Ollama: http://localhost:11434/v1, Groq: https://api.groq.com/openai/v1, …).
     // Leave unset for the real OpenAI API.
     baseURL: process.env.OPENAI_BASE_URL || undefined,
+    defaultHeaders: providerHeaders(
+      process.env.OPENAI_BASE_URL,
+      (process.env.OPENAI_API_KEY || "").trim()
+    ),
     chatModel: process.env.OPENAI_CHAT_MODEL || "gpt-4o-mini",
     embedModel: process.env.OPENAI_EMBED_MODEL || "text-embedding-3-small",
     // Vector dim emitted by the embedding model. Must match the Qdrant
