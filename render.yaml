@@ -72,6 +72,8 @@ services:
       - key: MAX_FILE_SIZE_BYTES
         value: "200000"
       - key: EMBED_BATCH_SIZE
-        value: "64"
+        value: "256"
+      - key: EMBED_CONCURRENCY
+        value: "4"
       - key: CACHE_REINDEX_HOURS
         value: "24"

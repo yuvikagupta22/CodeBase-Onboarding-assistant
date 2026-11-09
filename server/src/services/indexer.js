@@ -116,6 +116,23 @@ async function indexRepo({ repoUrl, force = false }) {
     }
     logger.info(`Produced ${chunks.length} chunks across ${stats.files} files`);
 
+    // Start the architecture summary now so it runs while we embed.
+    const sample = chunks.slice(0, 12).map((c) => ({
+      content: c.content,
+      payload: c.metadata,
+    }));
+    const summaryPromise = Promise.race([
+      llm.generateArchitectureSummary({
+        repoName: `${owner}/${name}`,
+        topChunks: sample,
+      }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Architecture summary timed out")), 30_000)
+      ),
+    ]);
+    // Avoid an unhandled rejection if embedding fails before we await it.
+    summaryPromise.catch(() => {});
+
     // Embed.
     const { vectors, usedTokens } = await embedder.embedTexts(
       chunks.map((c) => c.content)
@@ -126,22 +143,9 @@ async function indexRepo({ repoUrl, force = false }) {
     await vectorStore.ensureCollection(collectionName);
     await vectorStore.upsertChunks({ collectionName, chunks, vectors });
 
-    // Architecture summary on a representative sample (cheap & nice for UX).
-    const sample = chunks.slice(0, 12).map((c) => ({
-      content: c.content,
-      payload: c.metadata,
-    }));
     let summary = "";
     try {
-      summary = await Promise.race([
-        llm.generateArchitectureSummary({
-          repoName: `${owner}/${name}`,
-          topChunks: sample,
-        }),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Architecture summary timed out")), 30_000)
-        ),
-      ]);
+      summary = await summaryPromise;
     } catch (err) {
       logger.warn(`Architecture summary failed (non-fatal): ${err.message}`);
     }

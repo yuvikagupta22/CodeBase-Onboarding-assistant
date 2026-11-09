@@ -52,7 +52,9 @@ const env = {
     maxFiles: asInt(process.env.MAX_FILES_PER_REPO, 500),
     maxLines: asInt(process.env.MAX_LINES_PER_REPO, 100_000),
     maxFileSize: asInt(process.env.MAX_FILE_SIZE_BYTES, 200_000),
-    embedBatchSize: asInt(process.env.EMBED_BATCH_SIZE, 64),
+    embedBatchSize: asInt(process.env.EMBED_BATCH_SIZE, 256),
+    // How many embedding requests run at the same time.
+    embedConcurrency: asInt(process.env.EMBED_CONCURRENCY, 4),
     cacheReindexHours: asInt(process.env.CACHE_REINDEX_HOURS, 24),
   },
 };
